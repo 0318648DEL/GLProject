@@ -20,6 +20,8 @@ GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
 GLvoid Keyboard_s(int key, int x, int y);
+GLvoid Timer(int value);
+void Init();
 int mode = 1;
 int draw_mode = GLU_LINE;
 
@@ -30,7 +32,7 @@ glm::mat4 model_transform = glm::mat4(1.0f);
 glm::mat4 model = glm::mat4(1.0f);
 glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-GLuint vao, vbo[2];
+GLuint vao[4], vbo[4];
 
 GLfloat lines[]
 {
@@ -40,12 +42,26 @@ GLfloat lines[]
 	0.0f,1.0f,0.0f
 };
 
-GLfloat color[]
+GLfloat line_color[]
 {
 	0.0f,0.0f,0.0f,
 	0.0f,0.0f,0.0f,
 	0.0f,0.0f,0.0f,
 	0.0f,0.0f,0.0f
+};
+
+GLfloat triangles[9];
+GLfloat sike[603];
+GLfloat spring[603];
+GLfloat zigzag[]
+{
+	-0.6f,-0.5f,0.0f,
+	-0.4f,0.5f,0.0f,
+	-0.2f,-0.5f,0.0f,
+	0.0f,0.5f,0.0f,
+	0.2f,-0.5f,0.0f,
+	0.4f,0.5f,0.0f,
+	0.6f,-0.5f,0.0f
 };
 
 GLUquadricObj* qobj;
@@ -71,26 +87,36 @@ void main(int argc, char** argv)
 
 	pShaderProgram = glCreateProgram();
 	pShaderProgram = CompileShaders("vs.glsl", "fs.glsl");
+	Init();
 
-	glGenVertexArrays(1, &vao);
-	glGenBuffers(2, vbo);
+	glGenVertexArrays(3, vao);
+	glGenBuffers(3, vbo);
 
-	glBindVertexArray(vao);
+	glBindVertexArray(vao[0]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(lines), lines, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
 
+	glBindVertexArray(vao[1]);
+
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(color), color, GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(1);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(sike), sike, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+
+	glBindVertexArray(vao[2]);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(spring), spring, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
-	glutKeyboardFunc(Keyboard);
-	glutSpecialFunc(Keyboard_s);
+	/*glutKeyboardFunc(Keyboard);
+	glutSpecialFunc(Keyboard_s);*/
 	glutMainLoop();
 
 }
@@ -109,14 +135,17 @@ GLvoid drawScene()
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
 	unsigned int projLocation = glGetUniformLocation(pShaderProgram, "projTransform");
 
-	glBindVertexArray(vao);
+	glBindVertexArray(vao[0]);
 	glDrawArrays(GL_LINES, 0, 4);
 
 	model_transform = wRotate_mat * trans_mat * mRotate_mat;
 
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model_transform));
 
-	switch (mode)
+	glBindVertexArray(vao[2]);
+	glDrawArrays(GL_LINE_STRIP, 0, 603);
+
+	/*switch (mode)
 	{
 	case 1:
 		qobj = gluNewQuadric();
@@ -139,21 +168,7 @@ GLvoid drawScene()
 		gluQuadricOrientation(qobj, GLU_OUTSIDE);
 		gluCylinder(qobj, 0.4, 0.0, 0.6, 50, 8);
 		break;
-	case 4:
-		qobj = gluNewQuadric();
-		gluQuadricDrawStyle(qobj, draw_mode);
-		gluQuadricNormals(qobj, GLU_SMOOTH);
-		gluQuadricOrientation(qobj, GLU_OUTSIDE);
-		gluDisk(qobj, 0.2, 0.5, 20, 20);
-		break;
-	case 5:
-		qobj = gluNewQuadric();
-		gluQuadricDrawStyle(qobj, draw_mode);
-		gluQuadricNormals(qobj, GLU_SMOOTH);
-		gluQuadricOrientation(qobj, GLU_OUTSIDE);
-		gluCylinder(qobj, 0.5, 0.5, 0.8, 50, 8);
-		break;
-	}
+	}*/
 
 
 	glm::mat4 projM = glm::mat4(1.0f);
@@ -171,106 +186,28 @@ GLvoid Reshape(int w, int h)
 	glViewport(0, 0, w, h);
 }
 
-GLvoid Keyboard(unsigned char key, int x, int y)
+GLvoid Timer(int value)
 {
-	switch (key)
-	{
-	case '1':
-		up = glm::vec3(0.0f, 1.0f, 0.0f);
-		mRotate_mat = glm::mat4(1.0f);
-		mode = 1;
-		break;
-	case '2':
-		up = glm::vec3(0.0f, 0.0f, 1.0f);
-		mRotate_mat = glm::mat4(1.0f);
-		mRotate_mat = glm::rotate(mRotate_mat, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
-		mode = 2;
-		break;
-	case '3':
-		up = glm::vec3(0.0f, 1.0f, 0.0f);
-		mRotate_mat = glm::mat4(1.0f);
-		mRotate_mat = glm::rotate(mRotate_mat, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-		mode = 3;
-		break;
-	case '4':
-		up = glm::vec3(0.0f, 1.0f, 0.0f);
-		mRotate_mat = glm::mat4(1.0f);
-		mode = 4;
-		break;
-	case '5':
-		up = glm::vec3(0.0f, 0.0f, 1.0f);
-		mRotate_mat = glm::mat4(1.0f);
-		mRotate_mat = glm::rotate(mRotate_mat, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-		mode = 5;
-		break;
-	case 'w':
-		draw_mode = GLU_LINE;
-		break;
-	case 'W':
-		draw_mode = GLU_FILL;
-		break;
-	case 'y':
-		mRotate_mat = glm::rotate(mRotate_mat, glm::radians(3.5f), up);
-		break;
-	case 'Y':
-		mRotate_mat = glm::rotate(mRotate_mat, glm::radians(-3.5f), up);
-		break;
-	case 'r':
-		wRotate_mat = glm::rotate(wRotate_mat, glm::radians(3.5f), glm::vec3(0.0f, 1.0f, 0.0f));
-		break;
-	case 'R':
-		wRotate_mat = glm::rotate(wRotate_mat, glm::radians(-3.5f), glm::vec3(0.0f, 1.0f, 0.0f));
-		break;
-	case 'c':
-		wRotate_mat = glm::mat4(1.0f);
-		mRotate_mat = glm::mat4(1.0f);
-		trans_mat = glm::mat4(1.0f);
-		switch (mode)
-		{
-		case 2:
-			up = glm::vec3(0.0f, 0.0f, 1.0f);
-			mRotate_mat = glm::mat4(1.0f);
-			mRotate_mat = glm::rotate(mRotate_mat, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-			break;
-		case 3:
-			up = glm::vec3(0.0f, 1.0f, 0.0f);
-			mRotate_mat = glm::mat4(1.0f);
-			mRotate_mat = glm::rotate(mRotate_mat, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-			break;
-		case 5:
-			up = glm::vec3(0.0f, 0.0f, 1.0f);
-			mRotate_mat = glm::mat4(1.0f);
-			mRotate_mat = glm::rotate(mRotate_mat, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-			break;
-		}
-		break;
-	}
-
-	glutPostRedisplay();
 }
 
-GLvoid Keyboard_s(int key, int x, int y)
+void Init()
 {
-	switch (key)
+	float i = -1.0f;
+	float r = 0.0f;
+	for (int x = 0; x < 603; x += 3)
 	{
-	case GLUT_KEY_LEFT:
-		trans_mat = glm::translate(trans_mat, glm::vec3(-0.05f, 0.0f, 0.0f));
-		break;
-	case GLUT_KEY_RIGHT:
-		trans_mat = glm::translate(trans_mat, glm::vec3(0.05f, 0.0f, 0.0f));
-		break;
-	case GLUT_KEY_UP:
-		trans_mat = glm::translate(trans_mat, glm::vec3(0.0f, 0.05f, 0.0f));
-		break;
-	case GLUT_KEY_DOWN:
-		trans_mat = glm::translate(trans_mat, glm::vec3(0.0f, -0.05f, 0.0f));
-		break;
-	}
+		sike[x] = i;
+		sike[x + 1] = glm::sin(glm::radians(3.6f*r));
+		sike[x + 2] = 0;
 
-	glutPostRedisplay();
+		spring[x] = i;
+		spring[x + 1] = 0.5f*glm::sin(glm::radians(10.8f * r));
+		spring[x + 2] = 0.5f*glm::cos(glm::radians(10.8f * r));
+
+		i += 0.01f;
+		r += 1.0f;
+	}
 }
 
 void AddShader(GLuint ShaderProgram, const char* pShaderText, GLenum ShaderType)

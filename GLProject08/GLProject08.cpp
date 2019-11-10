@@ -24,9 +24,11 @@ int mode = 1;
 int draw_mode = GLU_LINE;
 
 glm::mat4 trans_mat = glm::mat4(1.0f);
-glm::mat4 mRotate_mat = glm::mat4(1.0f);
+glm::mat4 mRotate_mat1 = glm::mat4(1.0f);
+glm::mat4 mRotate_mat2 = glm::mat4(1.0f);
 glm::mat4 wRotate_mat = glm::mat4(1.0f);
-glm::mat4 model_transform = glm::mat4(1.0f);
+glm::mat4 model1_transform = glm::mat4(1.0f);
+glm::mat4 model2_transform = glm::mat4(1.0f);
 glm::mat4 model = glm::mat4(1.0f);
 glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -112,9 +114,9 @@ GLvoid drawScene()
 	glBindVertexArray(vao);
 	glDrawArrays(GL_LINES, 0, 4);
 
-	model_transform = wRotate_mat * trans_mat * mRotate_mat;
+	model1_transform = wRotate_mat * trans_mat * mRotate_mat1;
 
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model_transform));
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model1_transform));
 
 	switch (mode)
 	{
