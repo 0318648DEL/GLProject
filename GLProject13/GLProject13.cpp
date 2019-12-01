@@ -19,63 +19,85 @@ GLuint pShaderProgram;
 GLvoid drawScene();
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
-bool mode = true;
-int draw_mode = GLU_LINE;
+GLvoid Timer(int value);
 
-glm::mat4 trans_mat1 = glm::mat4(1.0f);
-glm::mat4 trans_mat2 = glm::mat4(1.0f);
-glm::mat4 mRotate_mat1 = glm::mat4(1.0f);
-glm::mat4 mRotate_mat2 = glm::mat4(1.0f);
-glm::mat4 wRotate_mat = glm::mat4(1.0f);
-glm::mat4 scale_mat = glm::mat4(1.0f);
-glm::mat4 model1_transform = glm::mat4(1.0f);
-glm::mat4 model2_transform = glm::mat4(1.0f);
-glm::mat4 model = glm::mat4(1.0f);
-//glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::mat4 model_transform = glm::mat4(1.f);
+glm::mat4 world_transform = glm::mat4(1.f);
+glm::mat4 proj_transform = glm::mat4(1.f);
 
-GLuint vao[3], vbo[6];
-GLuint c_ebo, p_ebo;
+glm::vec3 cameraPos = glm::vec3(0.f, 5.f, 5.f);
+glm::vec3 cameraDirection = glm::vec3(0.f, 0.f, 0.f);
+glm::vec3 cameraUp = glm::vec3(0.f, 1.f, 0.f);
+glm::vec4 color;
 
-GLfloat lines[]
-{
-	-1.0f,0.0f,0.0f,
-	1.0f,0.0f,0.0f,
-	0.0f,-1.0f,0.0f,
-	0.0f,1.0f,0.0f,
-	0.0f,0.0f,-1.0f,
-	0.0f,0.0f,1.0f
-};
-
-GLfloat color[]
-{
-	0.0f,0.0f,0.0f,
-	0.0f,0.0f,0.0f,
-	0.0f,0.0f,0.0f,
-	0.0f,0.0f,0.0f
-};
+GLuint vao[2], vbo[2], ebo[2];
 
 GLfloat c_pos[]
 {
-	-0.4f,-0.4f,0.4f,
-	0.4f,-0.4f,0.4f,
-	0.4f,0.4f,0.4f,
-	-0.4f,0.4f,0.4f,
-	-0.4f,-0.4f,-0.4f,
-	0.4f,-0.4f,-0.4f,
-	0.4f,0.4f,-0.4f,
-	-0.4f,0.4f,-0.4f
+	-0.2f,0.f,0.2f,
+	0.2f,0.f,0.2f,
+	0.2f,0.4f,0.2f,
+	-0.2f,0.4f,0.2f,
+	-0.2f,0.f,-0.2f,
+	0.2f,0.f,-0.2f,
+	0.2f,0.4f,-0.2f,
+	-0.2f,0.4f,-0.2f
 };
 
-GLfloat c_color[]
+GLfloat head[]
 {
-	1.0f,0.0f,0.0f,
-	0.0f,1.0f,0.0f,
-	0.0f,0.0f,1.0f,
-	1.0f,1.0f,1.0f,
-	0.0f,0.0f,0.0f,
-	1.0f,0.0f,0.0f,
-	0.0f,1.0f,0.0f,
-	0.0f,0.0f,1.0f,
+	-0.1f,0.f,0.1f,
+	0.1f,0.f,0.1f,
+	0.1f,0.1f,0.1f,
+	-0.1f,0.1f,0.1f,
+	-0.1f,0.f,-0.1f,
+	0.1f,0.f,-0.1f,
+	0.1f,0.1f,-0.1f,
+	-0.1f,0.1f,-0.1f
+};
+
+GLfloat body[]
+{
+	-0.15f,0.f,0.15f,
+	0.15f,0.f,0.15f,
+	0.15f,0.3f,0.15f,
+	-0.15f,0.3f,0.15f,
+	-0.15f,0.f,-0.15f,
+	0.15f,0.f,-0.15f,
+	0.15f,0.3f,-0.15f,
+	-0.15f,0.3f,-0.15f
+};
+
+GLfloat arm[]
+{
+	-0.05f,-0.1f,0.05f,
+	0.05f,-0.1f,0.05f,
+	0.05f,0.f,0.05f,
+	-0.05f,0.f,0.05f,
+	-0.05f,-0.1f,-0.05f,
+	0.05f,-0.1f,-0.05f,
+	0.05f,0.f,-0.05f,
+	-0.05f,0.f,-0.05f
+};
+
+GLfloat leg[]
+{
+	-0.05f,-0.1f,0.05f,
+	0.05f,-0.1f,0.05f,
+	0.05f,0.f,0.05f,
+	-0.05f,0.f,0.05f,
+	-0.05f,-0.1f,-0.05f,
+	0.05f,-0.1f,-0.05f,
+	0.05f,0.f,-0.05f,
+	-0.05f,0.f,-0.05f
+};
+
+GLfloat plane[]
+{
+	-2.f,0.f,2.f,
+	2.f,0.f,2.f,
+	2.f,0.f,-2.f,
+	-2.f,0.f,-2.f
 };
 
 unsigned int c_index[]
@@ -94,35 +116,11 @@ unsigned int c_index[]
 	1,0,5
 };
 
-GLfloat p_pos[]
-{
-	-0.4f,-0.4f,0.4f,
-	0.4f,-0.4f,0.4f,
-	0.4f,-0.4f,-0.4f,
-	-0.4f,-0.4f,-0.4f,
-	0.0f,0.4f,0.0f
-};
-
-GLfloat p_color[]
-{
-	1.0f,0.0f,0.0f,
-	0.0f,1.0f,0.0f,
-	0.0f,0.0f,1.0f,
-	1.0f,1.0f,1.0f,
-	0.0f,0.0f,0.0f,
-};
-
 unsigned int p_index[]
 {
-	0,1,4,
-	1,2,4,
-	2,3,4,
-	3,0,4,
-	3,2,0,
-	1,0,2
+	0,1,3,
+	2,3,1
 };
-
-GLUquadricObj* qobj;
 
 void main(int argc, char** argv)
 {
@@ -130,7 +128,7 @@ void main(int argc, char** argv)
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowPosition(0, 0);
 	glutInitWindowSize(800, 600);
-	glutCreateWindow("Example09");
+	glutCreateWindow("Example12");
 
 
 	//glew초기화하기
@@ -146,104 +144,94 @@ void main(int argc, char** argv)
 	pShaderProgram = glCreateProgram();
 	pShaderProgram = CompileShaders("vs.glsl", "fs.glsl");
 
-	glGenVertexArrays(3, vao);
-	glGenBuffers(6, vbo);
-	glGenBuffers(1, &c_ebo);
-	glGenBuffers(1, &p_ebo);
+	proj_transform = glm::perspective(glm::radians(60.f), (800.f / 600.f), 0.1f, 200.f);
 
-	scale_mat = glm::scale(scale_mat, glm::vec3(0.5f, 0.5f, 0.5f));
-	wRotate_mat = glm::rotate(wRotate_mat, glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	trans_mat1 = glm::translate(trans_mat1, glm::vec3(-0.5f, 0.0f, 0.0f));
-	trans_mat2 = glm::translate(trans_mat2, glm::vec3(0.5f, 0.0f, 0.0f));
+	glGenVertexArrays(2, vao);
+	glGenBuffers(2, vbo);
+	glGenBuffers(2, ebo);
 
 	glBindVertexArray(vao[0]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(lines), lines, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(c_pos), c_pos, GL_DYNAMIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo[0]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(c_index), c_index, GL_DYNAMIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(color), color, GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(1);
-
 	glBindVertexArray(vao[1]);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(c_pos), c_pos, GL_DYNAMIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, c_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(c_index), c_index, GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(plane), plane, GL_DYNAMIC_DRAW);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(c_color), c_color, GL_DYNAMIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, c_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(c_index), c_index, GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-	glEnableVertexAttribArray(1);
-
-	glBindVertexArray(vao[2]);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[4]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(p_pos), p_pos, GL_DYNAMIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, p_ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo[1]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(p_index), p_index, GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[5]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(p_color), p_color, GL_DYNAMIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, p_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(p_index), p_index, GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-	glEnableVertexAttribArray(1);
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
+	glutTimerFunc(100, Timer, 0);
 	glutMainLoop();
-
 }
 
 GLvoid drawScene()
 {
-	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
 
 	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(pShaderProgram);
 
-	model = wRotate_mat;
-	//그리기 부분 구현
-	unsigned int modelLocation = glGetUniformLocation(pShaderProgram, "modelTransform");
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
+	unsigned int viewLocation = glGetUniformLocation(pShaderProgram, "viewTransform");
 	unsigned int projLocation = glGetUniformLocation(pShaderProgram, "projTransform");
+	unsigned int worldLocation = glGetUniformLocation(pShaderProgram, "worldTransform");
+	unsigned int modelLocation = glGetUniformLocation(pShaderProgram, "modelTransform");
+	unsigned int colors = glGetUniformLocation(pShaderProgram, "plane_color");
 
-	glBindVertexArray(vao[0]);
-	glDrawArrays(GL_LINES, 0, 6);
+	glUniformMatrix4fv(projLocation, 1, GL_FALSE, glm::value_ptr(proj_transform));
+	glUniformMatrix4fv(worldLocation, 1, GL_FALSE, glm::value_ptr(world_transform));
 
-	model1_transform = wRotate_mat * trans_mat1 * mRotate_mat1 * scale_mat;
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model1_transform));
+	glm::mat4 view = glm::mat4(1.f);
+	view = glm::lookAt(cameraPos, cameraDirection, cameraUp);
+	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
 
+	model_transform = glm::mat4(1.f);
+	color = glm::vec4(0.f, 0.f, 0.f, 1.f);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model_transform));
+	glUniform4fv(colors, 1, glm::value_ptr(color));
 	glBindVertexArray(vao[1]);
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-	model2_transform = wRotate_mat * trans_mat2 * mRotate_mat2 * scale_mat;
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model2_transform));
+	model_transform = glm::mat4(1.f);
+	model_transform = glm::translate(model_transform, glm::vec3(2.f, 2.f, 0.f));
+	model_transform = glm::rotate(model_transform, glm::radians(90.f), glm::vec3(0.f, 0.f, -1.f));
+	color = glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model_transform));
+	glUniform4fv(colors, 1, glm::value_ptr(color));
+	glBindVertexArray(vao[1]);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-	glBindVertexArray(vao[2]);
-	glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
+	model_transform = glm::mat4(1.f);
+	model_transform = glm::translate(model_transform, glm::vec3(-2.f, 2.f, 0.f));
+	model_transform = glm::rotate(model_transform, glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
+	color = glm::vec4(0.4f, 0.4f, 0.4f, 1.f);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model_transform));
+	glUniform4fv(colors, 1, glm::value_ptr(color));
+	glBindVertexArray(vao[1]);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-
-	glm::mat4 projM = glm::mat4(1.0f);
-	projM = glm::ortho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
-	glUniformMatrix4fv(projLocation, 1, GL_FALSE, glm::value_ptr(projM));
-
+	model_transform = glm::mat4(1.f);
+	model_transform = glm::translate(model_transform, glm::vec3(0.f, 2.f, -2.f));
+	model_transform = glm::rotate(model_transform, glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
+	color = glm::vec4(0.6f, 0.6f, 0.6f, 1.f);
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model_transform));
+	glUniform4fv(colors, 1, glm::value_ptr(color));
+	glBindVertexArray(vao[1]);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 
 	//그리기 관련 부분이 여기에 포함된다.
@@ -255,38 +243,20 @@ GLvoid Reshape(int w, int h)
 	glViewport(0, 0, w, h);
 }
 
+GLvoid Timer(int value)
+{
+	
+
+	glutTimerFunc(100, Timer, 0);
+	glutPostRedisplay();
+}
+
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
 	switch (key)
 	{
-	case 'y':
-		mRotate_mat2 = glm::rotate(mRotate_mat2, glm::radians(3.5f), glm::vec3(0.0f, 1.0f, 0.0f));
-		break;
-	case 'Y':
-		mRotate_mat2 = glm::rotate(mRotate_mat2, glm::radians(-3.5f), glm::vec3(0.0f, 1.0f, 0.0f));
-		break;
-	case 'x':
-		mRotate_mat1 = glm::rotate(mRotate_mat1, glm::radians(3.5f), glm::vec3(1.0f, 0.0f, 0.0f));
-		break;
-	case 'X':
-		mRotate_mat1 = glm::rotate(mRotate_mat1, glm::radians(-3.5f), glm::vec3(1.0f, 0.0f, 0.0f));
-		break;
-	case 'b':
-		wRotate_mat = glm::rotate(wRotate_mat, glm::radians(3.5f), glm::vec3(0.0f, 1.0f, 0.0f));
-		break;
-	case 'B':
-		wRotate_mat = glm::rotate(wRotate_mat, glm::radians(-3.5f), glm::vec3(0.0f, 1.0f, 0.0f));
-		break;
-	case 'c':
-		glm::mat4 temp = trans_mat2;
-		trans_mat2 = trans_mat1;
-		trans_mat1 = temp;
-		temp = mRotate_mat2;
-		mRotate_mat2 = mRotate_mat1;
-		mRotate_mat1 = temp;
-		break;
+	
 	}
-
 	glutPostRedisplay();
 }
 
